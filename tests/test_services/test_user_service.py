@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 pytestmark = pytest.mark.asyncio
 
-# Test creating a user with valid data
-async def test_create_user_with_valid_data(db_session, email_service):
+# Test creating an admin with valid data
+async def test_create_admin_with_valid_data(db_session, email_service):
     user_data = {
         "nickname": generate_nickname(),
         "email": "valid_user@example.com",
@@ -21,12 +21,20 @@ async def test_create_user_with_valid_data(db_session, email_service):
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    assert user.role == UserRole.ADMIN
 
     #ensure that no verification token is set for admin
     assert user.verification_token == None
 
-# Test user email verification 
-async def test_user_email_verification(db_session, email_service):
+# Test creating a user with valid data
+async def test_create_user_with_valid_data(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ADMIN.name
+    }
+    await UserService.create(db_session, user_data, email_service)
     user_data = {
         "nickname": generate_nickname(),
         "email": "valid_user2@example.com",
@@ -34,6 +42,49 @@ async def test_user_email_verification(db_session, email_service):
         "role": UserRole.ANONYMOUS.name
     }
     user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.email == user_data["email"]
+    assert user.role == UserRole.ANONYMOUS
+
+    #ensure that verification token is set for user
+    assert user.verification_token != None
+
+# Test creating a user with valid data
+async def test_cannot_create_additional_admin(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ADMIN.name
+    }
+    await UserService.create(db_session, user_data, email_service)
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user2@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ADMIN.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    
+    assert user.role == UserRole.ANONYMOUS
+
+# Test user email verification 
+async def test_user_email_verification(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ADMIN.name
+    }
+    await UserService.create(db_session, user_data, email_service)
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user3@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    
     id = user.id
     token = user.verification_token
     #response = await UserService.verify_email_with_token(db_session, id, token)
