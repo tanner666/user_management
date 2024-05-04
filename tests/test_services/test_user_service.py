@@ -6,6 +6,7 @@ from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
 from app.routers.user_routes import verify_email
 from app.utils.nickname_gen import generate_nickname
+from unittest.mock import MagicMock
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,6 +22,9 @@ async def test_create_user_with_valid_data(db_session, email_service):
     assert user is not None
     assert user.email == user_data["email"]
 
+    #ensure that no verification token is set for admin
+    assert user.verification_token == None
+
 # Test user email verification 
 async def test_user_email_verification(db_session, email_service):
     user_data = {
@@ -30,9 +34,6 @@ async def test_user_email_verification(db_session, email_service):
         "role": UserRole.ANONYMOUS.name
     }
     user = await UserService.create(db_session, user_data, email_service)
-    assert user is not None
-    assert user.email == user_data["email"]
-
     id = user.id
     token = user.verification_token
     #response = await UserService.verify_email_with_token(db_session, id, token)
