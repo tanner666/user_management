@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.dependencies import get_settings
 from app.models.user_model import User, UserRole
 from app.services.user_service import UserService
+from app.routers.user_routes import verify_email
 from app.utils.nickname_gen import generate_nickname
 
 pytestmark = pytest.mark.asyncio
@@ -19,6 +20,31 @@ async def test_create_user_with_valid_data(db_session, email_service):
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+
+# Test user email verification 
+async def test_user_email_verification(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user2@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ANONYMOUS.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.email == user_data["email"]
+
+    id = user.id
+    token = user.verification_token
+    #response = await UserService.verify_email_with_token(db_session, id, token)
+    
+     # Simulate API call to verify the email
+    response = await verify_email(id, token, db_session, email_service)
+    
+    assert response == {"message": "Email verified successfully"}
+    
+    # Reload or re-fetch the user to check if the email_verified flag has been updated
+    verified_user = await UserService.get_by_id(db_session, id)
+    assert verified_user.email_verified == True
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
