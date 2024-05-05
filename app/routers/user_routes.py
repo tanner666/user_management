@@ -110,7 +110,7 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     )
 
 @router.put("/user_professional_status/{user_id}", response_model=UserResponse, name="update_user_professional_status", tags=["User Management Requires (Admin or Manager Roles)"])
-async def update_user_professional_status(user_id: UUID, user_update: UpdateProfessionalStatus, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+async def update_user_professional_status(user_id: UUID, user_update: UpdateProfessionalStatus, request: Request, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """
     Update user information.
 
@@ -121,6 +121,10 @@ async def update_user_professional_status(user_id: UUID, user_update: UpdateProf
     updated_user = await UserService.update(db, user_id, user_data)
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    print(f"Email type: {email_service}")
+    
+    await email_service.send_professional_status_update_email(updated_user)
 
     return UserResponse.model_construct(
         id=updated_user.id,
@@ -140,21 +144,39 @@ async def update_user_professional_status(user_id: UUID, user_update: UpdateProf
         links=create_user_links(updated_user.id, request)
     )
 
-@router.get("/myaccount", response_model=UserResponse, tags=["My Account"])
+@router.get("/myaccount/", response_model=UserResponse, tags=["My Account"])
 async def myaccount(
     request: Request,
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
     current_user: dict = Depends(get_current_user)):
 
-    print(f"What is my current user data: {current_user}")
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication Required")
     
+    user_id=current_user["user_id"]
+    user = await UserService.get_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     return UserResponse.model_construct(
-        id=current_user["user_id"],
-        role=current_user["role"],
+        id=user.id,
+        nickname=user.nickname,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        bio=user.bio,
+        profile_picture_url=user.profile_picture_url,
+        github_profile_url=user.github_profile_url,
+        linkedin_profile_url=user.linkedin_profile_url,
+        role=user.role,
+        email=user.email,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+        is_professional=user.is_professional,
+        links=create_user_links(user.id, request)  
     )
+
 
 # update user profile
 @router.put("/user_profile/", response_model=UserResponse, name="update_user_profile", tags=["Update Profile (Authenticated Roles)"])

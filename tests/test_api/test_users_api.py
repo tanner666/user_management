@@ -6,6 +6,10 @@ from app.models.user_model import User, UserRole
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
+from app.dependencies import get_current_user
+from unittest.mock import AsyncMock, patch
+from app.services.email_service import EmailService
+from fastapi import Depends
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -35,6 +39,23 @@ async def test_retrieve_user_access_allowed(async_client, admin_user, admin_toke
     response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
     assert response.status_code == 200
     assert response.json()["id"] == str(admin_user.id)
+
+@pytest.mark.asyncio
+async def test_my_account_access_allowed(async_client, user_token):
+    headers = {"Authorization": f"Bearer {user_token}"}
+    current_user: dict = get_current_user(user_token)
+    user_id=current_user["user_id"]
+    response = await async_client.get(f"/myaccount/", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["id"] == str(user_id)
+
+@pytest.mark.asyncio
+async def test_my_account_access_denied(async_client, user_token):
+    headers = {"Authorization": ""}
+    current_user: dict = get_current_user(user_token)
+    user_id=current_user["user_id"]
+    response = await async_client.get(f"/myaccount/", headers=headers)
+    assert response.status_code == 401
 
 @pytest.mark.asyncio
 async def test_update_user_email_access_denied(async_client, verified_user, user_token):
@@ -238,6 +259,8 @@ async def test_update_user_professional_status(async_client, verified_user, admi
     response = await async_client.put(f"/user_professional_status/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["is_professional"] == updated_data["is_professional"]
+
+# manual test for email notification in mailtrap
 
 @pytest.mark.asyncio
 async def test_update_user_professional_status_fail(async_client, verified_user, user_token):
