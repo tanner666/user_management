@@ -7,6 +7,8 @@ from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
 from app.dependencies import get_current_user
+from unittest.mock import AsyncMock, patch
+from app.services.email_service import EmailService
 from fastapi import Depends
 
 # Example of a test function using the async_client fixture
@@ -257,6 +259,8 @@ async def test_update_user_professional_status(async_client, verified_user, admi
     response = await async_client.put(f"/user_professional_status/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["is_professional"] == updated_data["is_professional"]
+
+# manual test for email notification in mailtrap
 
 @pytest.mark.asyncio
 async def test_update_user_professional_status_fail(async_client, verified_user, user_token):
