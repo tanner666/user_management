@@ -51,6 +51,37 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
+@pytest.mark.asyncio
+async def test_update_profile_first_name_access_allowed(async_client, verified_user, user_token):
+    updated_data = {"first_name": f"{verified_user.first_name}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.put(f"/user_profile/", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["first_name"] == updated_data["first_name"]
+
+@pytest.mark.asyncio
+async def test_update_profile_last_name_access_allowed(async_client, verified_user, user_token):
+    updated_data = {"last_name": f"{verified_user.last_name}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.put(f"/user_profile/", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["last_name"] == updated_data["last_name"]
+
+@pytest.mark.asyncio
+async def test_update_profile_bio_access_allowed(async_client, verified_user, user_token):
+    updated_data = {"bio": f"{verified_user.bio}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.put(f"/user_profile/", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["bio"] == updated_data["bio"]
+
+@pytest.mark.asyncio
+async def test_update_profile_url_access_allowed(async_client, verified_user, user_token):
+    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = await async_client.put(f"/user_profile/", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):

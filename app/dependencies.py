@@ -8,6 +8,7 @@ from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
+import logging
 
 def get_settings() -> Settings:
     """Return application settings."""

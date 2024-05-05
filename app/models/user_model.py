@@ -77,7 +77,7 @@ class User(Base):
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
-        return f"<User {self.nickname}, Role: {self.role.name}>"
+        return f"<User {self.nickname}, Role: {self.role.name}, ID: {self.id}>"
 
     def lock_account(self):
         self.is_locked = True

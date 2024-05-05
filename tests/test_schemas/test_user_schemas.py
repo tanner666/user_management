@@ -59,6 +59,12 @@ def test_user_base_valid(user_base_data):
     assert user.nickname == user_base_data["nickname"]
     assert user.email == user_base_data["email"]
 
+# Tests for ProfileUpdate
+def test_profile_update_valid(user_base_data):
+    user = UserBase(**user_base_data)
+    assert user.first_name == user_base_data["first_name"]
+    assert user.bio == user_base_data["bio"]
+
 # Tests for UserCreate
 def test_user_create_valid(user_create_data):
     user = UserCreate(**user_create_data)
