@@ -62,6 +62,15 @@ async def test_delete_user(async_client, admin_user, admin_token):
     assert fetch_response.status_code == 404
 
 @pytest.mark.asyncio
+async def test_delete_user_unauthorized(async_client, verified_user, user_token):
+    headers = {"Authorization": f"Bearer {user_token}"}
+    delete_response = await async_client.delete(f"/users/{verified_user.id}", headers=headers)
+    assert delete_response.status_code == 403
+    # Verify the user is deleted
+    fetch_response = await async_client.get(f"/users/{verified_user.id}", headers=headers)
+    assert fetch_response.status_code == 403
+
+@pytest.mark.asyncio
 async def test_create_user_duplicate_email(async_client, verified_user):
     user_data = {
         "email": verified_user.email,
