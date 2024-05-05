@@ -135,9 +135,7 @@ async def update_profile(user_update: ProfileUpdate, request: Request, db: Async
     - **user_update**: UserUpdate model with updated user information.
     """
     user_data = user_update.model_dump(exclude_unset=True)
-    user_email=current_user["user_id"]
-    user_info = await UserService.get_by_email(db, user_email)
-    user_id = user_info.id
+    user_id=current_user["user_id"]
     logging.info(f"USER INFOR: {user_id}")
 
     updated_user = await UserService.update(db, user_id, user_data)
@@ -261,7 +259,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": str(user.id), "role": str(user.role.name)},
             expires_delta=access_token_expires
         )
 
@@ -278,7 +276,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": str(user.id), "role": str(user.role.name)},
             expires_delta=access_token_expires
         )
 
