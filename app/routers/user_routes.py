@@ -27,12 +27,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
-from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate
+from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, ProfileUpdate, UpdateProfessionalStatus
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+import logging
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
@@ -99,6 +100,86 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
         nickname=updated_user.nickname,
         email=updated_user.email,
         role=updated_user.role,
+        last_login_at=updated_user.last_login_at,
+        profile_picture_url=updated_user.profile_picture_url,
+        github_profile_url=updated_user.github_profile_url,
+        linkedin_profile_url=updated_user.linkedin_profile_url,
+        created_at=updated_user.created_at,
+        updated_at=updated_user.updated_at,
+        links=create_user_links(updated_user.id, request)
+    )
+
+@router.put("/user_professional_status/{user_id}", response_model=UserResponse, name="update_user_professional_status", tags=["User Management Requires (Admin or Manager Roles)"])
+async def update_user_professional_status(user_id: UUID, user_update: UpdateProfessionalStatus, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+    """
+    Update user information.
+
+    - **user_id**: UUID of the user to update.
+    - **user_update**: UserUpdate model with updated user information.
+    """
+    user_data = user_update.model_dump(exclude_unset=False)
+    updated_user = await UserService.update(db, user_id, user_data)
+    if not updated_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return UserResponse.model_construct(
+        id=updated_user.id,
+        bio=updated_user.bio,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        nickname=updated_user.nickname,
+        email=updated_user.email,
+        role=updated_user.role,
+        last_login_at=updated_user.last_login_at,
+        profile_picture_url=updated_user.profile_picture_url,
+        github_profile_url=updated_user.github_profile_url,
+        linkedin_profile_url=updated_user.linkedin_profile_url,
+        created_at=updated_user.created_at,
+        updated_at=updated_user.updated_at,
+        is_professional=updated_user.is_professional,
+        links=create_user_links(updated_user.id, request)
+    )
+
+@router.get("/myaccount", response_model=UserResponse, tags=["My Account"])
+async def myaccount(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(get_current_user)):
+
+    print(f"What is my current user data: {current_user}")
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication Required")
+    
+    return UserResponse.model_construct(
+        id=current_user["user_id"],
+        role=current_user["role"],
+    )
+
+# update user profile
+@router.put("/user_profile/", response_model=UserResponse, name="update_user_profile", tags=["Update Profile (Authenticated Roles)"])
+async def update_profile(user_update: ProfileUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(get_current_user)):
+    """
+    Update user information.
+
+    - **user_id**: UUID of the user to update.
+    - **user_update**: UserUpdate model with updated user information.
+    """
+    user_data = user_update.model_dump(exclude_unset=True)
+    user_id=current_user["user_id"]
+    logging.info(f"USER INFOR: {user_id}")
+
+    updated_user = await UserService.update(db, user_id, user_data)
+    if not updated_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return UserResponse.model_construct(
+        id=updated_user.id,
+        bio=updated_user.bio,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        nickname=updated_user.nickname,
+        email=updated_user.email,
         last_login_at=updated_user.last_login_at,
         profile_picture_url=updated_user.profile_picture_url,
         github_profile_url=updated_user.github_profile_url,
@@ -209,7 +290,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": str(user.id), "role": str(user.role.name)},
             expires_delta=access_token_expires
         )
 
@@ -226,7 +307,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": str(user.id), "role": str(user.role.name)},
             expires_delta=access_token_expires
         )
 
