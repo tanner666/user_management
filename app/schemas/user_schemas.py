@@ -47,6 +47,7 @@ class UserUpdate(UserBase):
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: Optional[str] = Field(None, example="AUTHENTICATED")
+    is_professional: Optional[bool] = Field(default=True, example=True)
 
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):
@@ -67,12 +68,23 @@ class ProfileUpdate(BaseModel):
         if not any(values.values()):
             raise ValueError("At least one field must be provided for update")
         return values
+    
+class UpdateProfessionalStatus(BaseModel):
+    first_name: Optional[str] = Field(None, example="John")
+    is_professional: Optional[bool] = Field(default=False, example=False)
+
+    @root_validator(pre=True)
+    def check_at_least_one_value(cls, values):
+        if all(value is None for value in values.values()):
+            if all(value is not False for value in values.values()):
+                raise ValueError("At least one field must be provided for update")
+        return values
 
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
-    is_professional: Optional[bool] = Field(default=False, example=True)
+    is_professional: Optional[bool] = Field(default=False, example=False)
     role: UserRole
 
 class LoginRequest(BaseModel):

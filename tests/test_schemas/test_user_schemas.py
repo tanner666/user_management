@@ -2,7 +2,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest, UpdateProfessionalStatus, ProfileUpdate
 
 # Fixtures for common test data
 @pytest.fixture
@@ -16,7 +16,7 @@ def user_base_data():
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg",
         "linkedin_profile_url": "https://linkedin.com/in/johndoe",
-        "github_profile_url": "https://github.com/johndoe"
+        "github_profile_url": "https://github.com/johndoe",
     }
 
 @pytest.fixture
@@ -33,6 +33,10 @@ def user_update_data():
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
+
+@pytest.fixture
+def user_update_status_data(user_update_data):
+    return{**user_update_data, "is_professional":False}
 
 @pytest.fixture
 def user_response_data(user_base_data):
@@ -61,7 +65,7 @@ def test_user_base_valid(user_base_data):
 
 # Tests for ProfileUpdate
 def test_profile_update_valid(user_base_data):
-    user = UserBase(**user_base_data)
+    user = ProfileUpdate(**user_base_data)
     assert user.first_name == user_base_data["first_name"]
     assert user.bio == user_base_data["bio"]
 
@@ -76,6 +80,11 @@ def test_user_update_valid(user_update_data):
     user_update = UserUpdate(**user_update_data)
     assert user_update.email == user_update_data["email"]
     assert user_update.first_name == user_update_data["first_name"]
+
+# Tests for Update Professional Status
+def test_user_update_prof_status_valid(user_update_status_data):
+    user_update = UpdateProfessionalStatus(**user_update_status_data)
+    assert user_update.is_professional == user_update_status_data["is_professional"]
 
 # Tests for UserResponse
 def test_user_response_valid(user_response_data):
