@@ -51,6 +51,10 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         run: pytest
+      - name: Check environment variables
+        run: |
+          echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}"
+          echo "SMTP_PASSWORD=$(echo ${{ secrets.SMTP_PASSWORD }} | sed 's/./*/g')"
 
   build-and-push-docker:
     needs: test
