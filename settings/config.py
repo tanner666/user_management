@@ -41,8 +41,8 @@ class Settings(BaseSettings):
     smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
     username: str = str(os.environ.get('smtp_username'))
     password: str = str(os.environ.get('smtp_password'))
-    smtp_username: str = Field(default='1fea9cdbcf0de1', description="Username for SMTP server")
-    smtp_password: str = Field(default='abc48c2d52982d', description="Password for SMTP server")
+    smtp_username: str = Field(default=username, description="Username for SMTP server")
+    smtp_password: str = Field(default=password, description="Password for SMTP server")
 
 
     class Config:
