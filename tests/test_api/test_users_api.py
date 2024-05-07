@@ -41,6 +41,13 @@ async def test_retrieve_user_access_allowed(async_client, admin_user, admin_toke
     assert response.json()["id"] == str(admin_user.id)
 
 @pytest.mark.asyncio
+async def test_retrieve_user_access_allowed2(async_client, manager_user, manager_token):
+    headers = {"Authorization": f"Bearer {manager_token}"}
+    response = await async_client.get(f"/users/{manager_user.id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["id"] == str(manager_user.id)
+
+@pytest.mark.asyncio
 async def test_my_account_access_allowed(async_client, user_token):
     headers = {"Authorization": f"Bearer {user_token}"}
     current_user: dict = get_current_user(user_token)
@@ -73,12 +80,29 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.json()["email"] == updated_data["email"]
 
 @pytest.mark.asyncio
+async def test_update_user_email_access_allowed2(async_client, manager_user, manager_token):
+    updated_data = {"email": f"updated_{manager_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {manager_token}"}
+    response = await async_client.put(f"/users/{manager_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == updated_data["email"]
+
+@pytest.mark.asyncio
 async def test_update_profile_first_name_access_allowed(async_client, verified_user, user_token):
     updated_data = {"first_name": f"{verified_user.first_name}"}
     headers = {"Authorization": f"Bearer {user_token}"}
     response = await async_client.put(f"/user_profile/", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["first_name"] == updated_data["first_name"]
+
+@pytest.mark.asyncio
+async def test_update_profile_first_name_access_denied(async_client, unverified_user):
+    form_data = {
+        "first_name": unverified_user.first_name,
+        "password": "MySuperPassword$1234"
+    }
+    response = await async_client.post("/user_profile/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 405
 
 @pytest.mark.asyncio
 async def test_update_profile_last_name_access_allowed(async_client, verified_user, user_token):
@@ -89,12 +113,30 @@ async def test_update_profile_last_name_access_allowed(async_client, verified_us
     assert response.json()["last_name"] == updated_data["last_name"]
 
 @pytest.mark.asyncio
+async def test_update_profile_last_name_access_denied(async_client, unverified_user):
+    form_data = {
+        "first_name": unverified_user.last_name,
+        "password": "MySuperPassword$1234"
+    }
+    response = await async_client.post("/user_profile/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 405
+
+@pytest.mark.asyncio
 async def test_update_profile_bio_access_allowed(async_client, verified_user, user_token):
     updated_data = {"bio": f"{verified_user.bio}"}
     headers = {"Authorization": f"Bearer {user_token}"}
     response = await async_client.put(f"/user_profile/", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["bio"] == updated_data["bio"]
+
+@pytest.mark.asyncio
+async def test_update_profile_bio_access_denied(async_client, unverified_user):
+    form_data = {
+        "first_name": unverified_user.bio,
+        "password": "MySuperPassword$1234"
+    }
+    response = await async_client.post("/user_profile/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 405
 
 @pytest.mark.asyncio
 async def test_update_profile_url_access_allowed(async_client, verified_user, user_token):
@@ -105,12 +147,30 @@ async def test_update_profile_url_access_allowed(async_client, verified_user, us
     assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
 
 @pytest.mark.asyncio
+async def test_update_profile_url_access_denied(async_client, unverified_user):
+    form_data = {
+        "first_name": unverified_user.linkedin_profile_url,
+        "password": "MySuperPassword$1234"
+    }
+    response = await async_client.post("/user_profile/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert response.status_code == 405
+
+@pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)
     assert delete_response.status_code == 204
     # Verify the user is deleted
     fetch_response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
+    assert fetch_response.status_code == 404
+
+@pytest.mark.asyncio
+async def test_delete_user2(async_client, manager_user, manager_token):
+    headers = {"Authorization": f"Bearer {manager_token}"}
+    delete_response = await async_client.delete(f"/users/{manager_user.id}", headers=headers)
+    assert delete_response.status_code == 204
+    # Verify the user is deleted
+    fetch_response = await async_client.get(f"/users/{manager_user.id}", headers=headers)
     assert fetch_response.status_code == 404
 
 @pytest.mark.asyncio
@@ -220,6 +280,14 @@ async def test_update_user_github(async_client, admin_user, admin_token):
     assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
 
 @pytest.mark.asyncio
+async def test_update_user_github2(async_client, manager_user, manager_token):
+    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
+    headers = {"Authorization": f"Bearer {manager_token}"}
+    response = await async_client.put(f"/users/{manager_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
+
+@pytest.mark.asyncio
 async def test_update_user_linkedin(async_client, admin_user, admin_token):
     updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
     headers = {"Authorization": f"Bearer {admin_token}"}
@@ -256,6 +324,14 @@ async def test_list_users_unauthorized(async_client, user_token):
 async def test_update_user_professional_status(async_client, verified_user, admin_token):
     updated_data = {"is_professional": True}
     headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/user_professional_status/{verified_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["is_professional"] == updated_data["is_professional"]
+
+@pytest.mark.asyncio
+async def test_update_user_professional_status2(async_client, verified_user, manager_token):
+    updated_data = {"is_professional": True}
+    headers = {"Authorization": f"Bearer {manager_token}"}
     response = await async_client.put(f"/user_professional_status/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["is_professional"] == updated_data["is_professional"]
